@@ -1,9 +1,6 @@
 package com.xpj.threadpool;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -13,10 +10,10 @@ import java.util.stream.IntStream;
  * @Author: xupeiji
  * @Date: Created in 2019/4/10 10:21
  */
-public class SimpleThreadPool {
+public class SimpleThreadPool extends Thread{
 
     /**线程池大小*/
-    private final int size;
+    private int size;
 
     /**自增 用于线程名称命名*/
     private volatile int seq = 0;
@@ -29,9 +26,6 @@ public class SimpleThreadPool {
 
     /**拒绝策略*/
     private DiscardPolicy discardPolicy;
-
-    /**默认线程池大小*/
-    private final static int DEFAULT_SIZE = 10;
 
     /**默认任务队列大小*/
     private static final int DEFAULT_TASK_QUEUE_SIZE = 2000;
@@ -48,29 +42,87 @@ public class SimpleThreadPool {
     /**线程池线程队列*/
     private static final List<WorkerThread> THREAD_QUEUE = new ArrayList<>();
 
+    private int min;
+    private int max;
+    private int active;
+
     /**默认拒绝策略*/
     private static final DiscardPolicy DEFAULT_DISCARD_POLICY = () -> {
         throw new DiscardException("discard the task");
     };
 
     public SimpleThreadPool() {
-        this(DEFAULT_SIZE, DEFAULT_TASK_QUEUE_SIZE, DEFAULT_DISCARD_POLICY);
+        this(4, 8, 12, DEFAULT_TASK_QUEUE_SIZE, DEFAULT_DISCARD_POLICY);
     }
 
-    public SimpleThreadPool(int size, int taskQueueSize) {
-        this(size, taskQueueSize, DEFAULT_DISCARD_POLICY);
+    public SimpleThreadPool(int min, int active, int max, int taskQueueSize) {
+        this(min, active, max, taskQueueSize, DEFAULT_DISCARD_POLICY);
     }
 
-    public SimpleThreadPool(int size, int taskQueueSize, DiscardPolicy discardPolicy) {
-        this.size = size;
+    public SimpleThreadPool(int min, int active, int max, int taskQueueSize, DiscardPolicy discardPolicy) {
+        this.min = min;
+        this.active = active;
+        this.max = max;
         this.taskQueueSize = taskQueueSize;
         this.discardPolicy = discardPolicy;
         init();
     }
 
-    private void init(){
+  /*  private void init(){
         for (int i = 0; i < size; i++) {
             createWorkerTask();
+        }
+    }*/
+
+    private void init(){
+        for (int i = 0; i < min; i++) {
+            createWorkerTask();
+        }
+        this.size = min;
+        this.start();
+    }
+
+    
+    @Override
+    public void run() {
+        while(!isShutdown){
+            System.out.printf("min:%d,active:%d,max:%d,current:%d,taskQueueSize:%d\n",
+                    this.min, this.active, this.max, this.size, TASK_QUEUE.size());
+            try {
+                TimeUnit.SECONDS.sleep(1);
+                if (TASK_QUEUE.size() > active && size < active){
+                    for (int i = size; i < active; i++) {
+                        createWorkerTask();
+                    }
+                    size = active;
+                    System.out.println("threadpool resize to active");
+                }else if (TASK_QUEUE.size() > max && size < max){
+                    for (int i = size; i < active; i++) {
+                        createWorkerTask();
+                    }
+                    size = max;
+                    System.out.println("threadpool resize to max");
+                }
+
+                if (TASK_QUEUE.isEmpty() && size > active){
+                    int releaseSize = size - active;
+                    for(Iterator<WorkerThread> it = THREAD_QUEUE.iterator(); it.hasNext();){
+                        if (releaseSize <= 0){
+                            break;
+                        }
+
+                        WorkerThread workerThread = it.next();
+                        workerThread.interrupt();
+                        workerThread.close();
+                        it.remove();
+                        releaseSize--;
+                    }
+                    size = active;
+                    System.out.println("threadpool reduce to active");
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -182,7 +234,7 @@ public class SimpleThreadPool {
                         .ifPresent(System.out::println);
             })
         );
-        threadPool.shutdown();
+//        threadPool.shutdown();
         System.out.println("--------------main-------------------");
         TimeUnit.MILLISECONDS.sleep(50);
         threadPool.submit(() -> {
