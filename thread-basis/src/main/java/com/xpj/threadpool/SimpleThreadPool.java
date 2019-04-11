@@ -42,8 +42,11 @@ public class SimpleThreadPool extends Thread{
     /**线程池线程队列*/
     private static final List<WorkerThread> THREAD_QUEUE = new ArrayList<>();
 
+    /**最小线程数*/
     private int min;
+    /**最大线程数*/
     private int max;
+    /**活跃线程数*/
     private int active;
 
     /**默认拒绝策略*/
@@ -74,6 +77,7 @@ public class SimpleThreadPool extends Thread{
         }
     }*/
 
+    /**初始化时默认初始化一个最小线程数的线程池*/
     private void init(){
         for (int i = 0; i < min; i++) {
             createWorkerTask();
