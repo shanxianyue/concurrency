@@ -12,6 +12,7 @@
         <module>thread-basis</module>
         <module>classloader</module>
         <module>volatile-and-singleton</module>
+        <module>thread-parttern</module>
     </modules>
 
     <dependencies>
