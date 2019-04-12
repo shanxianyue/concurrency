@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>volatile</artifactId>
+    <artifactId>volatile-and-singleton</artifactId>
 
 
 </project>
