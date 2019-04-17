@@ -10,7 +10,7 @@ public class ProduceConsumerVersion1 {
 
     public static void main(String[] args){
 
-        Worker2 worker = new Worker2();
+        Worker worker = new Worker();
 
         new Thread(() -> {
             worker.produce();
