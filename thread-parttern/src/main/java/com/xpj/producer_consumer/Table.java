@@ -1,5 +1,7 @@
 package com.xpj.producer_consumer;
 
+import java.util.Arrays;
+
 public class Table {
     private final String[] buffer;
     private int tail; //下次put的位置
@@ -47,5 +49,17 @@ public class Table {
         notifyAll();
         System.out.printf("%s takes %s \n", Thread.currentThread().getName(), cake);
         return cake;
+    }
+
+
+    public synchronized void clear(){
+        if(count <= 0){
+            return;
+        }
+
+        count = 0;
+        head = 0;
+        this.tail = 0;
+        Arrays.asList(buffer).forEach(cake -> cake = null);
     }
 }
